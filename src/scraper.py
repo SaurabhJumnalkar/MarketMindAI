@@ -4,6 +4,7 @@ import logging
 import sys
 from typing import Optional, List, Dict
 from bs4 import BeautifulSoup
+from src.database import Database
 
 # Setup logging
 logging.basicConfig(
@@ -63,14 +64,25 @@ class NewsScraper:
         return results
 
     async def run(self):
+        # Checked for Database
+        await Database.init_db()
+
         async with httpx.AsyncClient() as session:
             raw_html = await self.fetch_html(session)
             if raw_html:
                 clean_data = self.parse_headlines(raw_html)
+                logger.info(f"Saving {len(clean_data)} headlines to DB...")
+
+                # save each headline through loop in DB
+                for item in clean_data:
+                    await Database.save_news(
+                        item["headline"], "https://finance.yahoo.com"
+                    )
+
                 print("\n --- SAMPLE HEADLINES ---")
                 for item in clean_data[:5]:
                     print(f"-{item['headline']}")
-                print(len(clean_data))
+                print(f"{len(clean_data)} Headlines are present.")
 
 
 if __name__ == "__main__":
