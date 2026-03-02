@@ -53,7 +53,7 @@ if __name__ == "__main__":
         await Database.init_db()
 
         # Save A fake headline
-        await Database.save_news("Apple Stock HIts $300", "https://fake.url")
+        # await Database.save_news("Apple Stock HIts $300", "https://fake.url")
 
         # Verify
         async with aiosqlite.connect(DB_NAME) as db:
