@@ -18,74 +18,65 @@ logger = logging.getLogger(__name__)
 User_Agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 
 
-class NewsScraper:
-    def __init__(self, base_url: str):
-        self.base_url = base_url
-        self.headers = {"User-Agent": User_Agent}
+class Targeted_NewsScraper:
+    def __init__(self):
+        self.headers = {"User-Agent": "Mozilla/5.0"}
 
-    async def fetch_html(self, session: httpx.AsyncClient) -> Optional[str]:
-        # Fetch Html and return raw html text
-
+    async def fetch_data(self, client: httpx.AsyncClient, url: str) -> Optional[str]:
+        # Fetch data and return raw data text
         try:
-            logger.info(f"Connecting to {self.base_url}...")
-
-            # async with
-
-            response = await session.get(
-                self.base_url, headers=self.headers, timeout=10.0, follow_redirects=True
+            response = await client.get(
+                url, headers=self.headers, timeout=10.0, follow_redirects=True
             )
-
             if response.status_code == 200:
-                html = response.text
-                logger.info(f"Downloaded HTML of {len(html)} bytes.")
-                return html
-
-            else:
-                logger.info(f"Failed.Status Code: {response.status}")
-                return None
+                return response.text
+            return None
 
         except Exception as e:
             logger.error(f"Connection Error: {e}")
             return None
 
     # Parsing the Headlines
-    def parse_headlines(self, html: str) -> List[Dict[str, str]]:
-        soup = BeautifulSoup(html, "html.parser")
+    def parse_headlines_rss(self, xml_data: str, ticker: str) -> List[Dict[str, str]]:
+        soup = BeautifulSoup(xml_data, "xml")
         results = []
 
-        # yahoo finance Specific tag for headlines
-        headlines = soup.find_all("h3")
+        items = soup.findAll("item")
 
-        for h3 in headlines:
-            text = h3.get_text(strip=True)
-            if len(text) > 15:
-                results.append({"headline": text})
-        logger.info(f"Successfully extracted {len(results)} headlines")
+        for item in items:
+            title = item.title.text if item.title else "NO title"
+            link = item.link.text if item.link else "NO link"
+            results.append({"ticker": ticker, "title": title, "link": link})
+
+        logger.info(f"extracted {len(results)} specific headlines for {ticker}.")
         return results
 
-    async def run(self):
+    async def run(self, tickers: list[str]):
         # Checked for Database
         await Database.init_db()
 
         async with httpx.AsyncClient() as session:
-            raw_html = await self.fetch_html(session)
-            if raw_html:
-                clean_data = self.parse_headlines(raw_html)
-                logger.info(f"Saving {len(clean_data)} headlines to DB...")
+            for ticker in tickers:
+                logger.info(f"Fetching Target headlines for {ticker}...")
 
-                # save each headline through loop in DB
-                for item in clean_data:
-                    await Database.save_news(
-                        item["headline"], "https://finance.yahoo.com"
-                    )
+                rss_url = f"https://feeds.finance.yahoo.com/rss/2.0/headline?s={ticker}&region=US&lang=en-US"  # noqa: E231
 
-                print("\n --- SAMPLE HEADLINES ---")
-                for item in clean_data[:5]:
-                    print(f"-{item['headline']}")
-                print(f"{len(clean_data)} Headlines are present.")
+                raw_xml = await self.fetch_data(session, rss_url)
+                if raw_xml:
+                    clean_data = self.parse_headlines_rss(raw_xml, ticker)
+
+                    print("\n__SNEAK PEEK INTO HEADLINE___\n")
+                    for item in clean_data[0:3]:
+                        print(item)
+
+                    for item in clean_data:
+                        await Database.save_news(
+                            item["ticker"], item["title"], item["link"]
+                        )
 
 
 if __name__ == "__main__":
-    URL = "https://finance.yahoo.com/topic/stock-market-news/"
-    scraper = NewsScraper(URL)
-    asyncio.run(scraper.run())
+    TARGET_STOCKS = ["AAPL", "TSLA", "NVDA"]
+
+    scraper = Targeted_NewsScraper()
+    asyncio.run(scraper.run(TARGET_STOCKS))
