@@ -38,6 +38,8 @@ class StockPredictor:
                 "Date",
                 "Close",
                 "Target_direction",
+                "Dividends",
+                "Stock Splits",
             ]
         )
         y = df["Target_direction"]
