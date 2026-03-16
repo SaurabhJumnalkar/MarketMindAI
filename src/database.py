@@ -16,6 +16,7 @@ class Database:
                 """
                 CREATE TABLE IF NOT EXISTS news (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            ticker TEXT,
                             title TEXT UNIQUE,
                             link TEXT,
                             published_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -27,13 +28,13 @@ class Database:
             await db.commit()
 
     @staticmethod
-    async def save_news(title: str, link: str):
+    async def save_news(ticker: str, title: str, link: str):
         try:
             async with aiosqlite.connect(DB_NAME) as db:
                 # SQL Command
                 await db.execute(
-                    "INSERT OR IGNORE INTO news (title,link) VALUES (?,?)",
-                    (title, link),
+                    "INSERT OR IGNORE INTO news (ticker,title,link) VALUES (?,?,?)",
+                    (ticker, title, link),
                 )
                 await db.commit()
                 logger.info(f"Saved: {title[:30]}...")  # Log first 30 chars
