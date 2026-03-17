@@ -22,13 +22,13 @@ jobs:
                 python-version: '3.12'
             
             - name: Install Dependencies
-              run: pip Install -r requirement.txt
+              run: pip install -r requirement.txt
 
             - name: Step 1- Pull History from Hugging face
               env:
                 HF_TOKEN: ${{ secrets.HF_TOKEN }}
               run: 
-                python -c "from src.cloud_storage import CloudStorage; storage = CloudStorage('YOUR_HF_USERNAME/marketmind-data'); storage.pull_from_cloud()"
+                python -c "from src.cloud_storage import CloudStorage; storage = CloudStorage('saurabhSJ/marketmind-data'); storage.pull_from_cloud()"
             
             - name: Step 2- Run the Pipeline
               run: python run_pipeline.py
