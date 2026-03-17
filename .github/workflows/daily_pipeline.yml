@@ -22,7 +22,7 @@ jobs:
                 python-version: '3.12'
             
             - name: Install Dependencies
-              run: pip Install -r requirement.txt
+              run: pip install -r requirement.txt
 
             - name: Step 1- Pull History from Hugging face
               env:
