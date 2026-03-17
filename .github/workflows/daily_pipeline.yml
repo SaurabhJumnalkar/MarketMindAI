@@ -1,0 +1,39 @@
+name: Marketmind Daily Pipeline
+
+on: 
+    schedule:
+        # This CRON job runs at 21:00 UTC (5:00 PM Eastern Market Close) Monday-Friday
+        - cron: '0 21 * * 1-5'
+
+    # This line creates a "Run Workflow" button on GitHub so you can test it manually!
+    workflow_dispatch:
+
+jobs:
+    run-ai-pipeline:
+        runs-on: ubuntu-latest
+    
+        steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                python-version: '3.12'
+            
+            - name: Install Dependencies
+              run: pip Install -r requirement.txt
+
+            - name: Step 1- Pull History from Hugging face
+              env:
+                HF_TOKEN: ${{ secrets.HF_TOKEN }}
+              run: 
+                python -c "from src.cloud_storage import CloudStorage; storage = CloudStorage('YOUR_HF_USERNAME/marketmind-data'); storage.pull_from_cloud()"
+            
+            - name: Step 2- Run the Pipeline
+              run: python run_pipeline.py
+            
+            - name: Step 3- Push Updated Brain and Data to Hugging Face
+              env:
+                HF_TOKEN: ${{ secrets.HF_TOKEN }}
+              run: python -m src.cloud_storage
