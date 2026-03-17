@@ -28,7 +28,7 @@ jobs:
               env:
                 HF_TOKEN: ${{ secrets.HF_TOKEN }}
               run: 
-                python -c "from src.cloud_storage import CloudStorage; storage = CloudStorage('YOUR_HF_USERNAME/marketmind-data'); storage.pull_from_cloud()"
+                python -c "from src.cloud_storage import CloudStorage; storage = CloudStorage('saurabhSJ/marketmind-data'); storage.pull_from_cloud()"
             
             - name: Step 2- Run the Pipeline
               run: python run_pipeline.py
