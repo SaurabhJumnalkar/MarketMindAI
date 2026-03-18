@@ -1,11 +1,48 @@
 import joblib
 import streamlit as st
+from huggingface_hub import hf_hub_download
+from dotenv import load_dotenv
 
 # import sys
 import os
 import pandas as pd
 
+# load local .venv if running on local
+load_dotenv()
+
+# Setup of page
 st.set_page_config(page_title="MarketMindAI", page_icon="🧠", layout="centered")
+
+# Hugging face
+HF_USERNAME = "saurabhSJ"
+REPO_NAME = f"{HF_USERNAME}/MarketMind-Data"
+
+
+def get_cloud_data(ticker: str):
+    token = os.environ.get("HF_TOKEN")
+
+    try:
+        model_path = hf_hub_download(
+            repo_id=REPO_NAME,
+            filename=f"models/{ticker}_model.joblib",
+            repo_type="dataset",
+            token=token,
+        )
+        data_path = hf_hub_download(
+            repo_id=REPO_NAME,
+            filename=f"data/{ticker}_master.csv",
+            repo_type="dataset",
+            token=token,
+        )
+
+        model = joblib.load(model_path)
+        df = pd.read_csv(data_path)
+
+        return model, df
+
+    except Exception as e:
+        print(f"Error While downloading the data & model: {e}")
+        return None, None
 
 
 def main():
@@ -18,19 +55,15 @@ def main():
     ticker = st.text_input("Enter stock Ticker (eg. AAPL, TSLA)").upper()
 
     if st.button("Analyze Risk"):
-        model_path = f"models/{ticker}_model.joblib"
-        data_path = f"data/{ticker}_master.csv"
-
-        if not os.path.exists(model_path) or not os.path.exists(data_path):
-            st.error(f"We don't have trained model for {ticker}.")
-            st.warning(f"You need to run pipeline for getting model for {ticker}.")
-            return
-
         with st.spinner(f"Analyzing the risk for {ticker}..."):
             # Predicting the risk
             # load the data
-            model = joblib.load(model_path)
-            df = pd.read_csv(data_path)
+            model, df = get_cloud_data(ticker)
+
+            if model is None or df is None:
+                st.error(f"We don't have trained model for {ticker}.")
+                st.warning(f"You need to run pipeline for getting model for {ticker}.")
+                return
 
             today_data = df.iloc[-1:]
             Date = today_data["Date"].values[0]
