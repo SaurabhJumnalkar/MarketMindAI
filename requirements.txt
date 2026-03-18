@@ -4,7 +4,7 @@ xgboost
 scikit-learn
 yfinance
 transformers
-streamlit
+streamlit>=1.32.0
 joblib
 huggingface_hub
 python-dotenv
